@@ -1,0 +1,319 @@
+1.7
+int - целые числа 
+float - вещественные числа с плав запятой 
+bool - лигоческие 
+
+str - строки
+они все неизменяемые
+
+type(7) - int определяет тип переменной 
+
+1.8
+input() читает строку с клавиатуры 
+a=int(input("введи чета"))
+print("sadasd", a)
+
+1.9
+False and True
+Операции 
+x or y(или)      x and y(и)     not x(не)
+Операции сравнения < <= > >= == !=
+
+1.10
+if условие_1:
+-блок 1
+elif условие_2:
+-блок 2
+else:
+-блок 3
+
+1.11
+#print(len("dasdas")) выводит количество символов 
+"\n" - на другую строчку
+
+
+2.1
+while пока не False продолжает действовать
+условие 1 
+....
+условие n
+
+2.2
+break - оператор завершения цикла
+continue - оператор перехода к следующей итерации цикла(если она есть)
+
+2.3
+for - оператор цикла 
+for i in 2,3,5: # для определенных чисел
+for i in range(1, 5): #от 1 до 4 с шагом 1
+ramge(5) - от 0 до 4
+range(1, 5, 2) - от 1 до 4 с шагом 2 (вывод 1 и 3)
+a, b = (int(i) for i in input().split()) # разбитие "ab" на "a" "b" и преобразование в int
+
+2.4
+строки и символы
+i[0] = первый символ 
+i = "atgg"
+print(i[0]) - вывод "a"
+
+for c in a:
+	print(c)
+	if c == "a":
+		cnt += 1 
+##########################
+c = input()
+print(c.count("a")) # вывод сколько в слове "а"
+Методы у строк
+s = "aTGcc" p = "cc"
+s.upper() - "ATGCC"
+s.lower() - "atgcc"
+s.count(p) -> 1
+s.find(p) -> 3 # первое вхождение "cc"
+s.find("A") -> -1 # строка "A" не входит в s
+Проверка вхождения в строку if "TG" in s:....
+s.replace("c", "C") # заменяем все "c" на "C"
+
+Последовательные вызовы методов
+s = "agTtcAGtc" -> AGTTCAGTC
+s.upper().count("gt".upper()) # otvet 2
+
+Slicing - диапазон символов
+dna = "ATTCGGAGCT"
+dna[1] -> "T"
+dna[1:4] -> "TTC"
+dna[:4] -> "ATTC"
+dna[4:] -> "GGAGCT"
+dna[-4:] -> "AGCT" - c конца
+dna[1:-1] -> "TTCGGAGC"
+dna[1:-1:2] -> "TCGG" - (интервал от 1 до -1 с шагом 2)
+dna[::-1] -> "TCGAGGCTTA" (символы в обратном порядке)
+
+Задача - палиндром (читается с двух сторон одинаково)
+CAGGTGGAC
+a = input()
+if a == a[::-1]:
+	print("YES")
+else:
+	print("NO")
+
+2.5
+Списки - наборы значений 
+students = ["ivan", "Masha", "Sasha"]
+for student in students:
+	print("Hello, " + student + "!")
+Операции со списками 
++ и * (плюс и умножение)
+!!!Изменение списков
+students = ["ivan", "Masha", "shasha"]
+students[1] = "Oleg" # замена маши на олега
+
+students.append("Olga") # добавление в конец списка 
+students += ["Olga"]
+
+можно создать пустой список students = [] а потом дополнять его
+
+students.insert(1,"olga") # добавление в позицию 1 без изменения 
+
+Удаление элемента из списка 
+students.remove("Sasha") # удаляет Sasha первое вхождение
+del students[0] # удаляет на позиции 0
+
+Поиск элемента в списке 
+if "Ivan" in students:
+	print("Ivan is here")
+if "Ann" not in students:
+	print("Ann is out")
+
+ind = students.index("Sasha") #выводит индекс(позицию в списке)
+если нету то эррор
+
+Сортировка списка 
+ordered_students = sorted(students) # не изменяя порядка изначального списка
+students.sort() #изменяя сам список
+min(), max() # функции вывода самого первого и последнего 
+
+Список в обратном порядке 
+students.reverse() #изменяет сам список
+reversed(students) #без изменения самого списка
+students[::-1]
+
+Присвоение списков
+a = [1, "A", 2]
+b = a
+a[0] = 42 # меняется и в а и в б потому что ссылаются на один и ту же ячейку в памяти
+
+Генерация списков 
+a = [0] * 5 #[0, 0, 0, 0, 0]
+a = [0 for i in range(5)] #[0, 0, 0, 0, 0]
+a = [i * i for i in range(5)] #[0, 1, 4, 9, 16]
+a = [int(i) for i in input().split()] #ввод через пробел
+
+print(sum(int(i) for i in input().split())) # Плюсует все что внутри sum([1, 2])
+
+Убрать дубли
+a = [1, 1, 2, 2] 
+set(a) #[1, 2]
+
+Генерация двумерных списков 
+a  = [[1,2,3], [4,5,6], [7,8,9]] # три на три матрица
+a[1] #[4,5,6]
+a[1][1] #5
+
+n = 3
+a[[0] * n] * n # создаем строчку а потом копируем ее 
+a[0][0] = 5 # 5 будет в [0][0] [0][1] [0][2]
+
+a = [[0] * n for i in range(n)]
+a = [[0 for j in range(n)] for i in range(n)]
+
+2.6
+Поиск минимума в списке 
+
+
+3.1
+Объявление функции 
+""" Нахождение мин символа """
+def min2(a, b):
+	if a <= b:
+		return a
+	else:
+		return b
+print(min2(2, 3)) #выводит на экран 2
+print(min(min(2, 3), 4) #сравнение 3 чисел 
+
+Различные функции 
+Без возвращаемого значения
+Без параметров
+Произвольное число параметров def min(*a):
+Параметры со значениями по усполчанию 
+
+Глобальные переменные - объявленная вне функции и может использоваться во всей проге
+def print_value():
+    print(a)
+
+a = 5
+print_value()  # 5
+
+
+3.2
+Множества - набор данных
+s = set() # создание пустого множества
+basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
+print(basket)  #вывод без дублей
+print('orange' in basket)  # True есть во множестве
+print('python' in basket)  # False нету во множестве
+
+Операции с множествами
+s.add(element) # добавление
+s.remove(element) # удаление если нету то ошибка
+s.discard(element) # удаление если нету то не будет ошибки
+s.clear() # удаление всего
+
+Перебор элементов множества
+basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
+for x in basket:
+    print(x)
+
+Словарь - <ключ, значение>
+Изменяемы / Элементы не имеют порядка / все ключи различны /
+ключи неизменяемы 
+d = dict()
+d = {}
+d = {'a': 239, 10: 100}
+print(d['a'])
+print(d[10])
+Операции со словарями 
+dictionary = d
+key = 'a'
+print(key in dictionary) #есть ли в словаре 
+print(key not in dictionary) #нету ли в словаре 
+Добавление по ключу 
+dictionary[key] = 42
+dictionary[key] #получение 42 по ключу key
+
+dictionary.get(key) # получим 42 и None если нету 
+
+del dictionary[key] #удаление
+
+Перебор элементов словаря 
+d = {'C': 14, 'A': 12, 'T': 9, 'G': 18}
+for key in d:
+    print(key, end=' ')  #C A T G
+
+for key in d.keys():
+    print(key, end=' ') #C A T G
+
+for value in d.values():
+    print(value, end=' ') # 14 12 9 18
+
+for key, value in d.items():
+    print(key, value, end='; ') # C 14; A 12; T 9; G 18;
+
+3.4 Чтение из файла
+inf = open('file.txt', 'r')  # open('file.txt') r - для чтения 
+s1 = inf.readline() # чтение первой строки
+s2 = inf.readline()  # чтение второй строки
+inf.close() 
+
+with open('text.txt') as inf: #так рекомендуется 
+    s1 = inf.readline()
+    s2 = inf.readline()
+    
+# здесь файл уже закрыт
+
+
+# s = inf.readline().strip()
+'\t abc \n'.strip() -> 'abc' # без всяких \t и \n
+
+import os # подключение модуля os
+os.path.join('.', 'dirname', 'filename.txt') #открытие по пути
+# ".\dirname\filename.txt"
+
+# Построчное чтение из файла
+with open('input.txt') as inf:
+    for line in inf:
+        line = line.strip()
+        print(line)
+
+Запись в файл
+ouf = open('file.txt', 'w')
+ouf.write('Some text\n')
+ouf.write(str(25))
+ouf.close()
+
+with open('text.txt', 'w') as ouf:
+    ouf.write('Some text\n')
+    ouf.write(str(25))
+    
+# здесь файл уже закрыт
+
+Модули - содержит функции и данные в отдельном файле
+Объекты из модуля можно импортировать в другие модули
+Имя файла = имя модуля + .py
+
+Импорт модуля 
+Файл my_module.py в нем описана функция foo()
+import my_module
+my_module.foo()
+
+Импорт from
+from my_module import foo
+foo()
+
+from my_module import * #импортируем все
+foo()
+
+from my_module import foo as my_foo #обращаемся к foo() через my_foo()
+my_foo()
+
+Аргументы командной строки 
+Модуль sys 
+sys,argv - список аргументов командной строки 
+
+import sys
+print(len(sys.argv))
+
+Запуск внешних процессов
+Модуль subprocess
+import subprocess
+subprocess.call(["python", "-h"])
