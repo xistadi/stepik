@@ -626,3 +626,5 @@ program &>> both.txt
 /dev/null
 program 2>/dev/null
 cat /dev/null > file.txt
+
+END
