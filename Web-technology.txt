@@ -1,10 +1,14 @@
+-------------------------------------------------------------------
+
 1.2 - https://stepik.org/media/attachments/lesson/12527/lesson.pdf
 Internet - глобальная сеть передачи данных
+Среда для передачи данных между двумя компьютерами
 Протоколы
 • HTTP, SSH, P2P - прикладные протоколы
 • DNS - система имен
-• TCP - надежная последовательная передача данных
+• TCP - надежная последовательная передача данных	
 • IP - глобальная адресация, передача в гетерогенной среде
+4 байта уникальная идентификация в сети (не надеждая передача)
 
 WWW - множество взаимосвязанных документов,
 располагающихся на машинах подключенных к Internet
@@ -63,6 +67,8 @@ Web-клиенты работают на компьютерах конечных
 Web-сервера работают (как правило) на серверах в датацентрах.
 Их задача заключается в хранении (или генерации) и отдачи
 документов.
+
+-------------------------------------------------------------------
 
 1.3 - https://stepik.org/media/attachments/lesson/12528/lesson.pdf
 Разновидности web-клиентов
@@ -123,6 +129,8 @@ JavaScript обработчиков
 • Используется шаблонизация в JavaScript
 • Application сервер возвращает чистые данные (JSON или XML, а не
 HTML)
+
+-------------------------------------------------------------------
 
 1.4 - https://stepik.org/media/attachments/lesson/14820/lesson.pdf
 HTML
@@ -267,6 +275,8 @@ type - определяет внешний вид и функционал
 • value - начальное знаечение, пользователь может изменить
 • placeholder - подсказка для пользователя
 
+-------------------------------------------------------------------
+
 1.5 - https://stepik.org/media/attachments/lesson/14821/lesson.pdf
 CSS
 Как задать оформление страницы ?
@@ -394,6 +404,8 @@ Twitter. Bootstrap позволяет быстро разработать при
 <div class="col-md-8 col-lg-10">CONTENT</div>
 </div>
 
+-------------------------------------------------------------------
+
 1.6* - https://stepik.org/media/attachments/lesson/14823/lesson.pdf
 Как происходит HTTP запрос ?
 • Браузер анализирует введенный URL и извлекает имя хоста
@@ -510,6 +522,8 @@ ClientHello - клиент указывает желаемые опции сое
 соединения.
 Под RTT понимается Round Trip Time - время, необходимое для
 передачи IP дейтаграммы к серверу и обратно.
+
+-------------------------------------------------------------------
 
 1.7 - https://stepik.org/media/attachments/lesson/14824/lesson.pdf
 Какие задачи решает HTTP?
@@ -637,6 +651,8 @@ HTTP коды ответа (2)
 • cервер или клиент передал заголовок Connection: close
 • по истечении таймаута (обычно небольшой, около 10с)
 Иначе соединение остается открытым для последующих запросов.
+
+-------------------------------------------------------------------
 
 1.8 - https://stepik.org/media/attachments/lesson/14825/lesson.pdf
 Web сервера
@@ -791,3 +807,242 @@ Event-driven разработка
 • Starman, Gunicorn – prefork, языки высокого уровня
 • Nginx, Lighttpd – асинхронные, С
 • Node.JS, Tornado – асинхронные, языки высокого уровня
+
+-------------------------------------------------------------------
+
+1.9 Архитектура frontend-backend
+Задачи Frontend (web) сервера
+• отдача статических документов
+• проксирование (reverse proxy)
+• балансировка нагрузки
+• кеширование
+• сборка SSI
+• авторизация, SSL, нарезка картинок, gzip
+
+
+Reverse proxy
+• frontend (медленно) читает запрос от клиента
+• frontend (быстро) передает запрос свободному backend
+• backend генерирует страницу
+• backend (быстро) возвращает ответ frontend серверу
+• frontend (медленно) возвращает ответ клиенту
+Результат: backend занят минимально возможное время.
+
+Backend (application) сервер
+Роль application сервера заключается в исполнении бизнес-логики
+приложения и генерации динамических документов.
+На каждый HTTP запрос application сервер запускает некоторый
+обработчик в приложении. Это может быть функция, класс или
+программа, в зависимости от технологии.
+
+Протоколы запуска приложения
+• Servlets и др. специализированные API
+• mod_perl, mod_python, mod_php
+• CGI
+• FastCGI
+• SCGI
+• PSGI, WSGI, Rack
+
+CGI - Common Gateway Interface
+• Метод, QueryString, заголовки запроса - через переменные
+окружения
+• Тело запроса передается через STDIN
+• Заголовки и тело ответа возвращаются через STDOUT
+• HTTP код ответа передается через псевдозаголовок Status
+• Поток ошибок STDERR направляется в лог ошибок сервера
+
+Переменные окружения CGI
+• REQUEST_METHOD - метод запроса
+• PATH_INFO - путь из URL
+• QUERY_STRING - фрагмент URL после ?
+• REMOTE_ADDR - IP адрес пользователя
+• CONTENT_LENGTH - длина тела запроса
+• HTTP_COOKIE - Заголовок Cookie
+• HTTP_ANY_HEADER_NAME - любой другой HTTP заголовок
+
+FastCGI и SCGI
+Основная проблема CGI - низкая производительность. Протоколы
+FastCGI и SCGI призваны решить эту проблему путем демонизации
+приложения. Иногда это возможно сделать даже без изменения
+кода CGI приложения.
+
+
+WSGI - актуальный протокол
+WSGI, PSGI, Rack - протоколы вызова функции обработчика из
+application сервера. Сам application server при этом может
+выполняться в отдельном процессе или совпадать с web сервером.
+Как правило, при использовании этих протоколов в качестве
+application сервера выступает отдельный легковесный процесс.
+
+Web Server Gateway Interface
+• Обработчик - функция или класс (callable)
+• Метод, QueryString, заголовки запроса - через аргумент environ
+• Тело запроса передается через file-handle wsgi.input
+• HTTP код ответа и заголовки ответа передаются через вызов
+функции start_response
+• Тело ответа возвращается в виде списка (iterable) из обработчика
+• Поток ошибок должен быть направлен в file-handle wsgi.stderr
+
+Переменные environ
+• CGI-like переменные: REQUEST_URI , ...
+• wsgi.version - версия WSGI протокола
+• wsgi.url_scheme - схема текущего URL: https или http
+• wsgi.input - file-handle для чтения тела запроса
+• wsgi.errors - file-handle для вывода ошибок
+• wsgi.multithreaded - ...
+• wsgi.multiprocess - ...
+
+Что ложится на приложение ?
+• Анализ PATH_INFO и выбор конкретного обработчика
+• Разбор конкретных заголовков, например Cookie
+• Разбор QUERY_STRING
+• Разбор тела запроса:
+• x-www-form-urlencoded
+• multipart/form-data
+• Вывод правильных заголовков ответа
+
+-------------------------------------------------------------------
+
+2.1 MVC фреймворки
+Основные типы запросов
+• Запросы статических документов
+• Запросы динамических документов
+• Отправка данных форм
+• A JAX - запросы
+• Запросы к API сайта
+• Персистентные соединения
+
+Основные задачи
+• Маршрутизация URL
+• Парсинг заголовков и параметров запроса
+• Хранение состояния (сессии) пользователя
+• Выполнение бизнес-логики
+• Работа с базами данных
+• Генерация HTML страницы или JSON ответа
+
+MVC - архитектурный патерн, который задает структуру веб-приложения
+из каких частей должно состоять веб приложение и как они должны
+между собой взаимодействовать
+• Router - выбор конкретного controller по URL
+• Model - реализация бизнес-логики приложения
+• Controller - работа с HTTP, связь controller и view
+• View - генерация HTML или другого представления
+
+Плюсы фреймворков
+➕ Готовая архитектура
+➕ Повторное использование кода
+➕ Экономия ресурсов
+➕ Участие в Open Source
+➕ Проще найти программистов
+➕ Проще обучать программистов
+
+
+DJANGO
+MVC - Django
+Model - Model
+Router - urls.py
+Controller - views
+View - templates
+
+
+Относительные пути
+import os.path
+BASE_DIR = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(BASE_DIR)
+BASE_DIR = os.path.dirname(BASE_DIR)
+TEMPLATE_DIRS = (
+BASE_DIR + '/templates',
+)
+STATIC_ROOT = BASE_DIR + '/static'
+
+Паттерн local_settings.py
+# в конце project/settings.py
+try:
+	from ask_pupkin.local_settings import *
+except ImportError:
+	pass
+
+-------------------------------------------------------------------
+
+2.2 MVC фреймворки
+Django Views
+Контроллеры в Django - это обычные функции, которые:
+• принимают объект django.http.HttpRequest
+первым параметром
+• возвращают объект django.http.HttpResponse
+
+HttpRequest
+• request.method - метод запроса
+• request.GET - словарь с GET параметрами
+• request.POST - словарь с POST параметрами
+• request.COOKIES - словарь c Cookie
+• request.FILES - загруженныe файлы
+• request.META - CGI-like переменные
+• request.session - словарь-сессия (*)
+• request.user - текущий пользователь (*)
+
+
+Декораторы в Python
+Декоратор – функция, преобразующая одну функцию в другую.
+def double_it(func):
+	def tmp(*args):
+		return func(*args) * 2
+return tmp
+@double_it
+def mult(a, b):
+	return a*b
+
+Декораторы в Django
+from django.views.decorators.http import require_POST
+@require_POST
+def like(request):
+pass
+• @require_GET – только GET запросы
+• @require_POST – только POST запросы
+• @login_required(login_url='/login/')
+• @csrf_exempt – отключить проверку CSRF
+
+Возможности шаблонизатора
+• {% for item in list %}{% endfor %} - итерация по списку
+• {% if var %}{% endif %} - условное отображение
+• {% include "tpl.html" %} - включение подшаблона
+• {{ var }} - вывод переменной
+• {{ var|truncatechars:9 }} - применение фильтров
+• {# comment #} , {% comment %}{% endcomment %} -
+комментарии
+
+
+Context processors
+Context processors - это функции, которые вызываются перед
+отрисовкой шаблона и могут добавить данных в контекст.
+Настройка TEMPLATE_CONTEXT_PROCESSORS :
+• django.core.context_processors.request (request)
+• django.core.context_processors.csrf (csrf_token)
+• django.core.context_processors.static (STATIC_URL)
+• django.contrib.auth.context_processors.auth (user, perms)
+
+Когда не вызываются context
+processors ?
+render(request, template_name, context) - вызывает.
+render_to_response(template_name, context) - не вызывает.
+
+-------------------------------------------------------------------
+
+2.3 Работа с СУБД
+Полезные утилиты
+• ./manage.py validate - проверить структуру моделей
+• ./manage.py syncdb - создать таблицы в базе (1 раз)
+• ./manage.py shell - запустить python shell
+• ./manage.py dbshell - запустить клиент базы данных
+
+Django Models
+ORM - Object relational mapping - библиотек предоставляющая
+объектно-ориентированный интерфейс к реляционной базе
+данных. Django Models - библиотека ORM в Djnago.
+Django - SQL
+класс Модели - Таблица
+объект модели - строка таблицы
+QuerySet - запрос
+
+-------------------------------------------------------------------
+
