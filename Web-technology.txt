@@ -1046,3 +1046,575 @@ QuerySet - запрос
 
 -------------------------------------------------------------------
 
+2.4 Django модели
+Методы QuerySet (chaining)
+• filter , exclude - фильтрация, в SQL это WHERE
+• order_by - сортировка
+• annotate - выборка агрегатов, в SQL это JOIN и GROUP BY
+• values - выборка отдельных колонок, а не объектов
+• distinct - выборка уникальных значений
+• select_related , prefetch_related - выборка из нескольких
+таблиц
+
+Синтаксис условий в QuerySet
+В методах filter и exclude :
+• field = value - точное совпадение
+• field__contains = value - суффикс оператора LIKE
+• field__isnull , field__gt , field__lte
+• relation__field = value - условие по связанной таблице
+• category__title__contains = "Perl"
+Названия полей и таблиц не могут содержать __ !
+
+-------------------------------------------------------------------
+
+2.5 Отображение данных
+Progressive loading
+Постраничная загрузка хорошо работает в тех случаях, когда
+легко определить число объектов, подходящих под поисковый
+запрос. Другими словами - когда можно составить эффективный
+SQL запрос.
+Иногда это сделать сложно, например: «отображать все посты в
+порядке добавления, но не больше одного поста из одной
+категории подряд».
+
+class PostManager(models.Manager):
+	def main(self, since, limit=10):
+		qs = self.order_by('-id')
+		res = []
+		if since is not None:
+			qs = qs.filter('id__lt'=since)
+		for p in qs[:1000]:
+			if len(res):
+				res.append(p)
+			elif res[-1].category != p.category:
+				res.append(p)
+			if len(res) >= limit:
+				break
+		return res
+
+
+def post_list_main(request):
+	since = request.GET.get('since')
+	posts = Post.objects.main(since)
+	return render(request, 'blog/post_main.html', {
+		'posts': posts,
+		'since': posts[-1].id,
+	})
+
+<a href="/blog/main/?since={{ since }}">Далее</a>
+
+-------------------------------------------------------------------
+
+2.6 Обработка форм
+Перенаправления в HTTP
+• 302 Found - временное перенаправление
+• 301 Moved Permanently - постоянное перенаправление
+(кешируется в браузере)
+• Location: url - URL для повторного запроса. Может быть как
+абсолютным, так и относительным.
+
+Перенаправления в Django
+from django.http import HttpResponseRedirect
+def some_view(request):
+	# logic..
+	return HttpResponseRedirect('/new_url/')
+# уязвимость open redirect
+def dangerous_view(request):
+	url = request.GET.get('continue')
+	return HttpResponseRedirect(url)
+
+-------------------------------------------------------------------
+
+2.7 Сессии и авторизация
+Атрибуты Cookie
+• name=value - имя и значение cookie
+• Expires - время жизни cookie, по умолчанию - до закрытия окна.
+• Domain - домен cookie, по умолчанию - домен текущего URL.
+• Path - путь cookie, по умолчанию - путь текущего URL.
+• Secure - cookie должна передаваться только по https
+• HttpOnly - cookie не доступна из JavaScript
+
+Установка и удаление Cookies
+Set-Cookie: sessid=d232rn38jd1023e1nm13r25z;
+Domain=.site.com; Path=/admin/;
+Expires=Sat, 15 Aug 2015 07:58:23 GMT;
+Secure; HttpOnly
+Set-Cookie: lang=ru
+Set-Cookie: sessid=xxx;
+Expires=Sun, 06 Nov 1994 08:49:37 GMT
+Для удаления cookie, сервер устанавливает Expires в прошлом.
+
+Получение Cookies
+Cookie: sessid=d232rn38jd1023e1nm13r25z; lang=ru;
+csrftoken=vVqoyo5vzD3hWRHQDRpIHzVmKLfBQIGD;
+При каждом запросе браузер выбирает подходящие cookies и
+отправляет только их значения.
+
+Правила выбора Cookies
+Пусть URL= http://my.app.site.com/blog/post/12
+Браузер выберет все cookies, у которых:
+• Не истек срок Expires
+• Domain совпадает с my.app.site.com или является .суффиксом,
+например Domain=.site.com
+• Path является префиксом /blog/post/12 ,
+например Path=/blog/
+• Не стоит флага Secure
+
+Работа с cookie в Django
+# установка
+resp.set_cookie('sessid','asde132dk13d1')
+resp.set_cookie('sessid','asde132dk13d1',
+domain='.site.com', path='/blog/',
+expires=(datettime.now() + timedelta(days=30)))
+# удаление
+resp.delete_cookie('another')
+# получение
+request.COOKIES # все cookies
+request.COOKIES.get('sessid') # одна cookie
+
+Cookie-based авторизация
+Необходимые модели
+class User(models.Model):
+	login = models.CharField(unique=True)
+	password = models.CharField()
+	name = models.CharField()
+class Session(models.Model):
+	key = models.CharField(unique=True)
+	user = models.ForeignKey(User)
+	expires = models.DateTimeField()
+
+def login(request):
+	error = ''
+	if request.method == 'POST':
+		login = request.POST.get('login')
+		password = request.POST.get('password')
+		url = request.POST.get('continue', '/')
+		sessid = do_login(login, password)
+		if sessid:
+			response = HttpResponseRedirect(url)
+			response.set_cookie('sessid', sessid,
+				domain='.site.com', httponly=True,
+				expires = datetime.now()+timedelta(days=5)
+			)
+			return response
+		else:
+			error = u'Неверный логин / пароль'
+	return render(request, 'login.html', {'error': error })
+
+def do_login(login, password):
+	try:
+		user = User.objects.get(login=login)
+	except User.DoesNotExist:
+		return None
+	hashed_pass = salt_and_hash(password)
+	if user.password != hashed_pass
+		return None
+	session = Session()
+	session.key = generate_long_random_key()
+	session.user = user
+	session.expires = datetime.now() + timedelta(days=5)
+	session.save()
+	return session.key
+
+Middleware в Django
+Middleware - это Python класс, в котором есть один из указанных
+ниже методов. Список всех активных middleware указан в
+настройке MIDDLEWARE_CLASSES .
+• process_request(request)
+• process_view(request, view, args, kwargs)
+• process_response(request, response)
+• process_exception(request, exception)
+
+class CheckSessionMiidleware(class):
+	def process_request(request):
+		try:
+			sessid = request.COOKIE.get('sessid')
+			session = Session.objects.get(
+				key=sessid,
+				expires__gt=datetime.now(),
+			)
+			request.session = session
+			request.user = session.user
+		except Session.DoesNotExist:
+			request.session = None
+			request.user = None
+
+Выход из приложения
+Для выхода из приложения достаточно удалить объект сессии:
+def logout(request):
+	sessid = request.COOKIE.get('sessid')
+	if sessid is not None:
+		Session.objects.delete(key=sessid)
+	url = request.GET.get('continue', '/')
+	return HttpResponseRedirect(url)
+
+
+django.contrib.sessions
+Предоставляет поддержку сессий, в том числе анонимных.
+Позволяет хранить в сессии произвольные данные, а не только ID
+пользователя. Позволяет хранить сессии в различных
+хранилищах, например Redis или Memcached.
+def some_view(request):
+	val = request.session['some_name']
+	request.session.flush()
+	request.session['some_name'] = 'val2'
+
+Безопасность сессий
+Основное направление атаки - кража cookie, хранящей ключ
+сессии, т.е. кража авторизации. Меры безопасности:
+• Ключ сессии невозможно подобрать перебором
+• HttpOnly флаг для сессионной cookie
+• Привязка сессии к IP адресу
+• Ограничение сессий по времени
+• Запрос пароля при критических действиях: смене пароля и т.д.
+
+-------------------------------------------------------------------
+
+3.1 Технология AJAX
+Asynchronous JavaScript And XML
+AJAX - технология загрузки данных / отправки форм без
+обновления WEB страницы.
+XML - совершенно не обязателен, возможны отправка и прием
+данных любого типа. Чаще всего вместо XML используется HTML
+либо JSON для загрузки сырых данных.
+
+AJAX на стороне клиента
+var xhr = new XMLHttpRequest();
+xhr.open('POST', '/xhr/test.html', true);
+xhr.onreadystatechange = function() {
+	if (xhr.readyState == 4) {
+		if (xhr.status == 200) {
+			alert(xhr.responseText);
+		}
+	}
+};
+xhr.send("a=5&b=4");
+
+AJAX при помощи jQuery
+$.ajax({
+	url: '/blog/comments/add/',
+	type: 'POST',
+	data: { post_id: 12, text: 'Занятная идея!' },
+}).success(function(data) {
+	if (data.status == 'ok') {
+		console.log(data.comment_id);
+	}
+}).error(function() {
+	console.log('http error')
+});
+
+Особенности и ограничения AJAX
+• Same Origin Policy - AJAX запросы можно отправлять только на
+свой домен. В современных браузерах есть CORS.
+• Т.к. данные передаются явно в метод send , то нельзя загружать
+файлы. В HTML5 есть FormData.
+• AJAX на стороне сервера не отличим от обычного запроса. jQuery
+добавляет заголовок X-Requested-With: XMLHttpRequest
+• Результаты запроса передаются в JavaScript функцию поэтому
+стандартные методы обработки ошибок - не работают.
+
+Загрузка HTML данных
+def comments_list(request):
+	post_id = request.GET.get('post_id')
+	post = get_object_or_404(Post, post_id)
+	comments = paginate(request, post.comments)
+	return render(request, 'blog/comments.html', {
+		'comments': comments
+	})
+В blog/comments.html отображается только HTML код
+комментариев, без окружающей страницы.
+
+Обмен данными в JSON
+{
+	"status": "ok",
+	"comment_id": 123
+}
+{
+	"status": "error",
+	"code": "no_auth",
+	"message":"вы не авторизованы"
+}
+
+HttpResponseAjax
+import json
+class HttpResponseAjax(HttpResponse):
+	def __init__(self, status='ok', **kwargs):
+		kwargs['status'] = status
+		super(HttpResponseAjax, self).__init__(
+			content = json.dumps(kwargs),
+			content_type = 'application/json',
+		)
+class HttpResponseAjaxError(HttpResponseAjax):
+	def __init__(self, code, message):
+		super(HttpResponseAjaxError, self).__init__(
+			status = 'error', code = code, message = message
+		)
+
+@login_required_ajax
+def comment_add(request):
+	form = AddCommentForm(request.POST)
+	if form.is_valid():
+		comment = form.save()
+		return HttpResponseAjax(comment_id=comment.id)
+	else:
+		return HttpResponseAjaxError(
+			code = "bad_params",
+			message = form.errors.as_text(),
+		)
+
+Проверка авторизации в AJAX
+def login_required_ajax(view):
+	def view2(request, *args, **kwargs):
+		if request.user.is_authenticated():
+			return view(request, *args, **kwargs)
+		elif request.is_ajax():
+			return HttpResponseAjaxError(
+				code = "no_auth",
+				message = u'Требуется авторизация',
+			)
+		else:
+			redirect('/login/?continue=' + request.get_full_path())
+	return view2
+
+Cross Origin Resource Sharing
+Браузер выполняет AJAX запросы даже к чужому домену, но в этом
+случае не вызывает функцию-callback в JavaScript, т.е. не дает
+использовать данные, загруженные с чужого домена.
+CORS позволяет серверу явно разрешить использование данных
+при кросс-доменных запросах.
+
+Заголовки CORS
+• Origin - указывает URL запрашивающего приложения
+• Access-Control-Allow-Origin: origin - разрешает
+использовать данные в кросс-доменном запросе. origin должен
+либо совпадать с загловком Origin в запросе, либо * .
+• Access-Control-Allow-Credentials - позволяет использовать
+данные, если были переданы cookies.
+
+Использование CORS
+Не следует разрешать CORS для всех запросов ( * ).
+Хорошей практикой является:
+• Проверка суффикса домена
+• Проверка домена по списку доверенных
+
+CORS на клиенте
+$.ajax({
+	url: 'https://site.com/blog/comments/add/',
+	type: 'POST',
+	data: { post_id: 12, text: 'Занятная идея!' },
+	crossDomain: true,
+	xhrFields: {
+		withCredentials: true
+	}
+}).success(function(data) {
+	// ...
+});
+
+CORS на сервере
+def allow_cors(view):
+	def view2(request, *args, **kwargs):
+		response = view(request, *args, **kwargs)
+		origin = request.META.get('HTTP_ORIGIN')
+		if not origin:
+			return response
+		for domain in settings.CORS_WHITE_LIST:
+			if origin.endswith('.' + domain):
+				response['Access-Control-Allow-Origin'] = origin
+		return response
+	return view2
+
+-------------------------------------------------------------------
+
+3.2 Real-Time сообщения
+Примеры использования
+• Чаты и мессенджеры
+• Отображение котировок
+• Прямые трансляции (a-la twitter)
+• Push уведомления
+• Сетевой обмен в играх на HTML
+
+• Polling - периодический опрос сервера
+• Comet (Long polling) - polling с долгоживущими запросами
+• Server Push - бесконечный запрос
+• WebSocket - специализированный протокол
+
+Polling на клиенте
+var since = 0;
+setInterval(function() {
+	$.ajax({
+		type: 'GET',
+		url: '/get_messages/',
+		data: { channel_id: 5, since: since },
+	}).success(function(resp) {
+		if (!resp.messages || !resp.messages.length) {
+			return;
+		}
+		handleMessages(resp.messages);
+		since = resp.messages[0].id;
+	});
+}, 5000);
+
+Polling на сервере
+def get_messages(request):
+	chan_id = request.GET.get('channel_id')
+	since = request.GET.get('since', 0)
+	messages = Messages.filter(
+		channel_id = channel_id,
+		id__gt = since,
+	).order_by('-id')
+	messages = [ m.as_data() for m in messages ]
+	return HttpResponseAjax(messages = messages)
+
+➕ Простота и надежность реализации
+➕ Не требуется дополнительного ПО
+➖ Сообщения приходят с задержкой до N секунд
+➖ Избыточное число HTTP запросов RPS=CCU/N
+➖ Ограничение по числу пользователей
+
+
+Comet на клиенте
+function getComet() {
+	$.ajax({
+		type: 'GET',
+		url: '/get_messages/',
+		data: { channel_id: 5 },
+	}).success(function(resp) {
+		handleMessages(resp.messages);
+		getComet();
+	}).error(function() {
+		setTimeout(getComet, 10000);
+	});
+}
+getComet();
+
+Comet на сервере
+В технологии comet сервер должен поддерживать одновременно
+открытыми большое количество соединений, причем каждое
+соединение находится в ожидании сообщений для него. По этой
+причине мы не можем использовать классический applicationсервер в роли comet-сервера. Для comet-сервера необходима
+отдельная технология, например nginx + mod_push.
+
+Nginx + mod_push
+location /publish/ {
+	set $push_channel_id $arg_cid; # id канала
+	push_store_messages off; # не храним сообщения
+	push_publisher; # включаем отправку
+	allow 127.0.0.1;
+	deny all;
+}
+
+location /listen/ {
+	push_subscriber_concurrency broadcast; # всем!
+	set $push_channel_id $arg_cid; # id канала
+	default_type application/json; # MIME тип сообщения
+	push_subscriber; # включаем доставку
+}
+
+Отправка сообщений
+import urllib2
+import json
+def send_message(request):
+    cid = request.GET.get('to') # в видео проясняется что здесь использование GET ошибочно
+    text = request.GET.get('text')
+    url = 'http://127.0.0.1/publish/?cid=' + cid
+    body = json.dumps({ 'messages': [ text ] })
+    request = urllib2.Request(url, body, {})
+    response = urllib2.urlopen(request) # может быть долгим
+    if response.getcode() == 200:
+        return HttpResponseAjax()
+    else:
+        return HttpResponseAjaxError(code=response.getcode())
+
+Плюсы и минусы Comet
+➕ Поддержка всеми браузерами
+➕ Поддержка большого числа пользователей
+➕ Относительная простота реализации
+➖ Избыточные HTTP запросы
+➖ Half-duplex
+
+
+Server push - бесконечный запрос
+Server push на клиенте
+<script>
+	function handle(message) {
+		// любая логика
+	}
+</script>
+<iframe src='/messages/?cid=123'></iframe>
+Ответ сервера:
+<script>parent.handle({ message: 'hello' })</script>
+
+
+WebSocket
+WebSocket handshake
+GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Origin: http://example.com
+Sec-WebSocket-Protocol: chat, superchat
+Sec-WebSocket-Version: 13
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+Sec-WebSocket-Protocol: chat
+
+WebSocket на стороне клиента
+var socket = new WebSocket('ws://host/echo');
+socket.onopen = function(event) {
+	console.log('ws opened');
+	var data = JSON.stringify({ message: "Hello WebSocket" });
+	socket.send(data);
+};
+socket.onmessage = function(event) {
+	var resp = JSON.parse(event.data);
+	console.log('ws message', resp.message);
+};
+socket.onclose = function(event) {
+	console.log('ws closed')
+};
+
+WebSocket на стороне сервера
+registry = {}
+class WSHandler(tornado.websocket.WebSocketHandler):
+	def open(self):
+		self.uid = self.get_argument("uid")
+		registry[self.uid] = self
+	def check_origin(self, origin):
+		return True
+	def on_close(self):
+		del registry[self.uid]
+
+WebSocket на стороне сервера (2)
+class MainHandler(tornado.web.RequestHandler):
+	def post(self):
+		body = self.get_argument("msg")
+		uid = self.get_argument("uid")
+		conn = registry.get(uid)
+		if conn:
+			conn.write_message(body)
+			self.write("OK")
+		else:
+			self.write("NO")
+
+WebSocket на стороне сервера (3)
+if __name__ == "__main__":
+	app = tornado.web.Application([
+		(r"/pub", MainHandler),
+		(r"/sub", WSHandler),
+	])
+app.listen(8888)
+tornado.ioloop.IOLoop.current().start()
+
+Плюсы и минусы WebSocket
+➕ Минимальный объем трафика
+➕ Минимальная нагрузка на сервер
+➕ Поддержка большого числа пользователей
+➕ Full-duplex
+➖ Нет поддержки IE<10, OperaMini, Android<4.4
+➖ Требуется специальный WebSocket-сервер
+➖ Плохо работает с прокси-серверами
+
+-------------------------------------------------------------------
