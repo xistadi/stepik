@@ -1,0 +1,41 @@
+-------------------------------------------------------------------
+
+Docker - Мини виртуальная машина которую можно запускать где угодно
+
+Компоненты:
+Docker Engine - сам докер установленный
+Docker Container - бегущая мини виртуальная машина (убунту сервер)
+Docker Image - не бегущий (по сути штука из которой работает контейнер)
+Dockerfile - файл в котором прописывается из чего будет сосотоять 
+наш имедж 
+Docker registries - публичные и приватные образы например на dockerhub
+
+
+docker run -it --name myapp --hostname myapp ubuntu bash - создаем 
+контейнер myapp
+docker pull <name image> - скачать image
+docker search <name image> - поиск images в hub
+docker images - список images
+docker ps -a - список контейнеров
+docker start <name container> - запуск контейнера по имени
+docker stop <name container> - stop container
+docker diff <name container> - изменения 
+docker logs <name container> - логи всех изменений 
+docker run -it - интерактивно(в самом терминале) -p перенаправление 
+портов(8000:8080 - по которому обращаемся:docker port) <name image>
+docker run -d -p 1234:8080 <name image> - запуск в фоновом режиме
+docker rmi <image id> - удалить image 
+docker rm <container name> - удалить container
+docker build -t myimage - сделать свой image из Dockerfile
+docker tag <image name> <image name>:<image tag> - добавить/изменить tag
+docker exec -it <container id> /bin/bash - запустить баш в контейнере
+docker commit <image id> <name>:<tag> - создаем новую версию image
+docker commit myapp xistadi/myapp - сделали из контейнера image
+docker push xistadi/myapp - запушим на dockerhub
+
+docker rm -f $(docker ps -aq)        # Delete all Containers
+docker rmi -f $(docker images -q)    # Delete all Images
+
+-------------------------------------------------------------------
+
+Dockerfile 
