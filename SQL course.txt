@@ -1,0 +1,186 @@
+База данных (БД) — это организованная структура, предназначенная для 
+хранения информации. Обычно БД представляются в виде совокупности 
+взаимосвязанных файлов или таблиц, предназначенных для решения 
+конкретной задачи.
+
+С понятием БД тесно связано понятие системы управления базой данных 
+(СУБД). СУБД — это комплекс программных средств, предназначенных для 
+создания структуры новой базы, наполнения ее содержимым, редактирования
+содержимого и визуализации информации.
+========================================================================
+2 Основных типа
+Реляционные БД
+	PostgreSQL
+	MySQL
+	Oracle
+	MS SQL
+	SQLight (поддержка встроена в Python) ...
+NoSQL
+	MongoDB
+	Redis
+	HBASE
+	Cassandra
+	...
+Реляционная база данных — база данных, основанная на реляционной модели 
+данных. Понятие «реляционный» основано на англ. relation («отношение, 
+зависимость, связь»). Использование реляционных баз данных было 
+предложено доктором Коддом из компании IBM в 1970 году. Для работы с 
+реляционными БД применяют реляционные СУБД.
+========================================================================
+Важные аспекты
+Данные представлены в виде таблиц
+SQL - API(основной иструмент работы с данными)
+Целостность данных
+	PK - primary key
+	FK - foreign key
+	Constrains
+Транзакции
+ACID
+	Атомарность(Atomic) Атомарность гарантирует, что никакая 
+	транзакция не будет зафиксирована в системе частично.
+	
+	Единообразие(Consistency)
+	
+	Изолированность(Isolation)Во время выполнения транзакции 
+	параллельные транзакции не должны оказывать влияния на её результат.
+	
+	Надежность(Durability)Другими словами, если пользователь 
+	получил подтверждение от системы, что транзакция выполнена, 
+	он может быть уверен, что сделанные им изменения не будут 
+	отменены из-за какого-либо сбоя.
+Index
+
+========================================================================
+Типы связей таблиц
+One to one - используется для облегчения основной таблицы/если нельзя 
+обновить основную таблицу то можно с помощью другой таблицы расширить
+Many to one
+Many to many
+========================================================================
+NoSQL
+Базы данных NoSQL специально созданы для определенных моделей данных и 
+обладают гибкими схемами, что позволяет разрабатывать современные 
+приложения.
+
+Типы баз данных NoSQL
+	БД на основе пар «ключ‑значение»
+	Документ
+	Графовые БД
+	БД в памяти
+	Поисковые БД
+========================================================================
+DB Sqlite - встроенна в python
+Особенности:
+	Хранит данные в файле или памяти
+	Не поддерживает ролевой модели
+Подходит для:
+	БД встроенных приложений
+	Небольшие приложения
+	Прототипирования
+
+import sqlite3 # no need to install
+conn = sqlite3.connect("test_db.sqlite")#создаем бд или коннектикмся уже
+					к созданной
+c = conn.cursor()#получаем курсор чтобы можно было посылать запросы
+#получаем из sqlite_master
+c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+
+c.execute("""
+CREATE table if not exists #создать таблицу если не существует
+    users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT UNIQUE
+    );
+""")
+
+c.execute("""
+create table if not exists 
+    cars ( #вторая таблица cars
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model TEXT UNIQUE,
+        user_id INTEGER,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    );
+""")
+
+c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+print(c.fetchall()) #[('users',), ('sqlite_sequence',), ('cars',)]
+========================================================================
+Insert some data - вставление информации
+c.execute("""INSERT INTO users (name, email) VALUES ('Mike','mike@example.com')""")
+c.execute("""INSERT INTO users (name, email) VALUES ('Nick','nick@example.com')""")
+conn.commit() #выполнить вставление
+========================================================================
+Get data
+c.execute("""SELECT * FROM users""")
+print(c.fetchall()) #[(1, 'Mike', 'mike@example.com'), (2, 'Nick', 'nick@example.com')]
+c.execute("""SELECT * FROM users WHERE id=2""")
+print(c.fetchall()) #[(2, 'Nick', 'nick@example.com')]
+========================================================================
+Insert some related data
+c.execute("""INSERT INTO cars (model, user_id) VALUES ('Лада-Калина', 1)""")
+c.execute("""INSERT INTO cars (model, user_id) VALUES ('Лада (Ваз 2109)', 1)""")
+c.execute("""INSERT INTO cars (model, user_id) VALUES ('УАЗ Патриот', 2)""")
+c.execute("""INSERT INTO users (name, email) VALUES ('Boris','boris@example.com')""")
+conn.commit()
+c.execute("""SELECT * FROM cars""")
+print(c.fetchall())#[(1, 'Лада-Калина', 1), (2, 'Лада (Ваз 2109)', 1), (3, 'УАЗ Патриот', 2)]
+c.execute("""INSERT INTO cars (model, user_id) VALUES ('КаВЗ1', 6)""") #должна быть ошибка но хз почему нету
+conn.commit()
+c.execute("""SELECT u.id, u.name, u.email, c.model FROM users u LEFT JOIN cars c ON u.id=c.user_id""")
+print(c.fetchall())
+Вывод таблицей:
+print("id\t", "name\t", "email\t", "car")
+for row in c.fetchall():
+    print(*row, sep="\t")
+Посчитать сколько машин у каждого:
+c.execute("""SELECT u.id, u.name, u.email, count(c.model) FROM users u LEFT JOIN cars c ON u.id=c.user_id GROUP BY u.email""")
+print("id\t", "name\t", "email\t", "cars")
+for row in c.fetchall():
+    print(*row, sep="\t")
+========================================================================
+ORM - мы вместо работы таблицами работаем с классами, тоесть таблицы
+это классы
+"""
+https://www.sqlalchemy.org/
+
+pip install sqlalchemy
+"""
+import os
+import sys
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine
+
+Base = declarative_base()
+
+from creds impors LOGIN, PASSS
+
+class Users(Base):
+    __tablename__ = 'users'
+    # Here we define columns for the table users
+    # Notice that each column is also a normal Python instance attribute.
+    id = Column(Integer, primary_key=True)
+    name = Column(String(250), nullable=False)
+    email = Column(String(250), nullable=False)
+    cars = relationship("Cars", back_populates="user")
+
+class Cars(Base):
+    __tablename__ = 'cars'
+    # Here we define columns for the table cars.
+    # Notice that each column is also a normal Python instance attribute.
+    id = Column(Integer, primary_key=True)
+    model = Column(String(250))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(Users, back_populates="cars")
+
+
+# Create an engine that stores data in the local directory's
+# sqlalchemy_example.db file.
+engine = create_engine(url="google.com:5432", db_mane="test_db", user=LOGIN, password="sdjkhdsjkhsdjkhnbdc!@dfjkfvd")
+
+# Create all tables in the engine. This is equivalent to "Create Table"
+# statements in raw SQL.
+Base.metadata.create_all(engine)

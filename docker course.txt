@@ -39,3 +39,4 @@ docker rmi -f $(docker images -q)    # Delete all Images
 -------------------------------------------------------------------
 
 Dockerfile 
+https://timeweb.com/ru/community/articles/osnovnye-komandy-docker
