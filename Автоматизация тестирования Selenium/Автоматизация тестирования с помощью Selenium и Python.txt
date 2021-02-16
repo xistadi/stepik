@@ -170,3 +170,102 @@ alert_is_present
 подробнее тут - https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.support.expected_conditions
 
 ===============================================================================
+
+3.2
+Проверка ожидаемого результата
+Через assert
+assert abs(-42) == 42 #True
+assert abs(-42) == -42 #ошибка AssertionError
+
+Собственный текст ошибки
+assert abs(-42) == -42, 'Something wrong' # ошибка 'Something wrong'
+
+тест-раннеры - unittest, PyTest и nose
+
+unittest
+#должно начинаться с test_
+def test_name_for_your_test():
+
+#пример
+import unittest
+
+class TestAbs(unittest.TestCase):
+    def test_abs1(self):
+        self.assertEqual(abs(-42), 42, "Should be absolute value of a number")
+        
+    def test_abs2(self):
+        self.assertEqual(abs(-42), -42, "Should be absolute value of a number")
+        
+if __name__ == "__main__":
+    unittest.main()
+
+
+3.3
+PyTest
+pip install pytest
+pytest работает на assert вместо assertEqual у unittest 
+
+Запуск проверки pytest <название файла>
+
+3.4
+Классические фикстуры (fixtures)
+PyTest — это вспомогательные функции для наших тестов, которые не являются частью тестового сценария
+test_fixture1.py
+Можем делать для всех тестов один запуск браузера а можем для каждого поотдельности
+
+
+Фикстуры, возвращающие значение
+test_fixture2.py
+
+Финализаторы — закрываем браузер
+test_fixture3.py
+
+Область видимости scope
+Для фикстур можно задавать область покрытия фикстур.
+“function”, “class”, “module”, “session”
+test_fixture3.py
+
+Автоиспользование фикстур
+При описании фикстуры можно указать дополнительный параметр 
+autouse=True, который укажет, что фикстуру нужно запустить 
+для каждого теста даже без явного вызова
+test_fixture_autouse.py
+
+
+3.5 PyTest — маркировка
+Для маркировки теста нужно написать декоратор вида @pytest.mark.mark_name,
+ где mark_name — произвольная строка.
+test_fixture8.py
+pytest.ini
+pytest -m smoke test_fixture8.py #запустить только smoke mark
+
+Пропуск тестов
+чтобы пропустить тест, его отмечают в коде как @pytest.mark.skip
+
+XFail: помечать тест как ожидаемо падающий
+@pytest.mark.xfail
+
+Параметризация тестов
+PyTest позволяет запустить один и тот же тест с разными входными параметрами.
+@pytest.mark.parametrize()
+test_fixture7.py
+
+Conftest.py — конфигурация тестов
+conftest.py - передаем наш сюда веббраузер и теперь не надо каждый раз писать
+import pytest
+from selenium import webdriver
+
+@pytest.fixture(scope="function")
+def browser():
+    print("\nstart browser for test..")
+    browser = webdriver.Chrome()
+    yield browser
+    print("\nquit browser..")
+    browser.quit()
+
+
+Запуск другого браузера
+pytest -s -v --browser_name=firefox test_cmd.py
+
+===============================================================================
+
