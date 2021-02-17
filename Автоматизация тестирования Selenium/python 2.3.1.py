@@ -7,11 +7,11 @@ def calc(x):
   return str(math.log(abs(12*math.sin(int(x)))))
 
 try:
-    link = "http://suninjuly.github.io/alert_accept.html"
+    link = "http://selenium1py.pythonanywhere.com/catalogue/the-shellcoders-handbook_209/?promo=newYear"
     browser = webdriver.Chrome()
     browser.get(link)
 
-    button = browser.find_element_by_tag_name('button')
+    button = browser.find_element_by_class_name('btn-add-to-basket')
     button.click()
 
     alert = browser.switch_to.alert
